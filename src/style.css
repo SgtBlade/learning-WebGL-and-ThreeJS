@@ -31,10 +31,29 @@ body {
 }
 
 .fps {
+  padding: 2rem;
   color: red;
   position: absolute;
   top: 0;
   right: 0;
   font-size: 3rem;
   font-weight: bold;
+}
+
+.samples {
+  display: flex;
+  flex-flow: row;
+  padding: 2rem;
+  color: red;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  font-size: 3rem;
+  font-weight: bold;
+}
+
+.c {
+  width: 100vw;
+  height: 100vh;
+  background-color: blueviolet;
 }

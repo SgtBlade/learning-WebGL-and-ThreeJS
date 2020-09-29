@@ -7,6 +7,17 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
 
 {
   let samples = 1;
+  let canvas = document.querySelector('.c');
+
+  document.querySelector('.samples__select').addEventListener('change', e => {
+    samples = e.currentTarget.value;
+    const body = document.querySelector('body');
+    body.removeChild(canvas);
+    canvas = document.createElement('canvas');
+    canvas.classList.add('c');
+    body.appendChild(canvas);
+    main();
+  });
 
   const fragmentShader = `
   #include <common>
@@ -17,6 +28,7 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
   uniform vec3 vw_dir;
   uniform vec3 vw_pos;
   uniform mat3 camera_matrix;
+  uniform int samples;
 
 
   #define M_PI 3.1415926535897932384626433832795
@@ -33,7 +45,6 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
   const int MAX_DEPTH = 3;
   const int NUM_OF_OBJECTS = 6;
   const int NUM_OF_LIGHTS = 2;
-  const int samples = ${samples};
   const float GAMMA = 2.2;
 
 
@@ -41,8 +52,8 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
   const float minimum_collision_distance = 0.00001;
   const float fov = 60.0 * M_PI / 180.0;
 
-  const float EV = 2.0;
-  const float light_intensity_scale = 1.0;
+  const float EV = 10.0;
+  const float light_intensity_scale = 10.0;
   const float light_directionality = 0.6;
   const float alpha_for_diffCosW = 1000.0;
 
@@ -401,19 +412,17 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
 
   const main = () => {
     let pointerLocked = false;
-    const canvas = document.querySelector('#c');
     const renderer = new THREE.WebGLRenderer({ canvas });
     renderer.autoClearColor = false;
     let theta = (- 1.0 * Math.PI) / 2.0;
     let phi = Math.PI / 2.0;
-    let viewdir = new THREE.Vector3(- 0.0, - 0.0, 1.0);
+    let viewdir = new THREE.Vector3(- 0.0, - 0.0, -1.0);
     const viewpos = new THREE.Vector3(0.0, 4.0, 25.0);
     const M = new THREE.Matrix3().set(1, 0, 0, 0, 1, 0, 0, 0, 1);
     let M2 = new THREE.Matrix4();
     let target = new THREE.Vector3();
     target.addVectors(viewpos, viewdir);
     M2.lookAt(viewpos, target, new THREE.Vector3(0.0, 1.0, 0.0));
-    console.log(viewdir);
     M.setFromMatrix4(M2);
     const sens = 1.0;
 
@@ -459,29 +468,24 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
       } else {
         pointerLocked = false;
       }
-      console.log("pointer locked:", pointerLocked);
     });
 
     document.addEventListener('mousemove', e => {
       if (!pointerLocked) return;
       const x = -e.movementY / 500; //  +ve, up  / -ve, down  //
       const y = -e.movementX / 500; // +ve, left / -ve, right //
-      theta -= y; //rotate around orthogonal own
-      phi -= x; // rotate around vertical
+      theta -= y;
+      phi -= x;
       viewdir = new THREE.Vector3(
         Math.cos(theta) * Math.sin(phi),
         Math.cos(phi),
         Math.sin(theta) * Math.sin(phi)
       );
 
-      // rotate pitch
-      //rotate a vector around an arbitrary directionvector
-      console.log(viewdir);
       M2 = new THREE.Matrix4();
       target = new THREE.Vector3();
       target.addVectors(viewpos, viewdir);
       M2.lookAt(viewpos, target, new THREE.Vector3(0.0, 1.0, 0.0));
-      console.log(viewdir);
       M.setFromMatrix4(M2);
     });
 
@@ -516,6 +520,7 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
     );
 
     const uniforms = {
+      samples: {value: samples},
       iTime: { value: 1 },
       iResolution: { value: new THREE.Vector3() },
       iChannel0: { value: texture },
@@ -561,6 +566,7 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
       uniforms.vw_dir.value = viewdir;
       uniforms.vw_pos.value = viewpos;
       uniforms.camera_matrix.value = M;
+      uniforms.samples.value = samples;
 
       composer.render(scene, camera);
 
@@ -572,5 +578,5 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
 
   main();
 
-  
+
 }
