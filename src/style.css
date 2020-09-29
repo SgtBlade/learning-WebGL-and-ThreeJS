@@ -25,3 +25,16 @@ html {
 .bold {
   font-weight: bold;
 }
+
+body {
+  position: relative;
+}
+
+.fps {
+  color: red;
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 3rem;
+  font-weight: bold;
+}
