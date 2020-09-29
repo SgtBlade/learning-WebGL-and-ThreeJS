@@ -1,9 +1,7 @@
 import "./style.css";
-// eslint-disable-next-line quotes
 import * as THREE from "./js/three/three.module.js";
 import { EffectComposer } from "./js/three/EffectComposer.js";
 import { RenderPass } from "./js/three/RenderPass.js";
-import { ShaderPass } from "./js/three/ShaderPass.js";
 
 {
   let samples = 1;
@@ -32,7 +30,7 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
 
 
   #define M_PI 3.1415926535897932384626433832795
-  const float PHI = 1.61803398874989484820459; // Φ = Golden Ratio
+  const float PHI = 1.61803398874989484820459;
   const float infinity = 10000000000000000000.0;
   vec3 view_dir = vec3(-0.1, -0.1, -1.0);
   vec3 view_pos = vec3(0.0, 4.0, 25.0);
@@ -54,7 +52,7 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
 
   const float EV = 10.0;
   const float light_intensity_scale = 10.0;
-  const float light_directionality = 0.6;
+  const float light_directionality = 0.75;
   const float alpha_for_diffCosW = 1000.0;
 
   struct Ray{
@@ -75,10 +73,6 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
     int type;
     vec3 pos;
     float radius;
-    //type 0: circle
-    //type 1: sphere
-    //type 2: plane
-    //type 3: triangle
     vec3 normal;
 
     Material mat;
@@ -132,7 +126,6 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
 
     vec3 step1 = vec3(sinT * cos(phi), sinT * sin(phi), cosT);
 
-    //rotate to normal plane
 
     vec3 rotated_vec = make_rot_matrix_from_normals(vec3(0.0, 0.0, 1.0), _n) * step1;
 
@@ -158,8 +151,6 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
 
   vec3 interpolated_ray_dir(vec2 _xy, float w, float h){
     float aspect_ratio = w/h;
-    //float x = (2.0 * (_xy.x +0.5)/w - 1.0);
-    //float y = -(1.0-2.0*(_xy.y+0.5)/h)/aspect_ratio;
   float x = (2.0 * (_xy.x + 0.5) / w -1.0) *aspect_ratio * tan(fov * 0.5);
   float y = (1.0 - 2.0*(_xy.y + 0.5) / h) * (-1.0) * tan(fov/2.0);
 
@@ -173,7 +164,7 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
 
   float intersect(Ray _ray, Object _obj){
     float d = infinity;
-    if (_obj.type == 0 ) // circle
+    if (_obj.type == 0 )
     {
           float d_t = dot(_obj.pos - _ray.m_or,_obj.normal)/dot(_obj.normal,_ray.m_dir);
         float ip_to_midpt = length(get_point_at_distance(_ray,d_t) - _obj.pos);
@@ -265,15 +256,10 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
 
             }
 
-
-
-            //random ray towards light
             vec3 diffuse_direct_col = vec3(0.0);
             for(int k =0;k<1;k++){
                 for(int i=0;i<NUM_OF_OBJECTS;i++){
-                    //make towards an object if it is emissive
                     if(_scene[i].mat.emissivity > 0.0){
-                        //Cast a ray towards an object that is emissive
                         vec3 pt_to_light_vec0 = normalize(_scene[i].pos - intersection_point);
 
                         vec3 random_dir = diff_cos_weighted_direction(light_directionality, pt_to_light_vec0);
@@ -282,7 +268,6 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
 
                         vec2 towards_light_intersection_info = intersect_scene(r_to_light, _scene);
                         int index_collision = int(towards_light_intersection_info.x);
-                        // The ray has collided with something, let's check its distance and the emissivity of the collided object
 
                         if(towards_light_intersection_info.y < infinity){
                             if(_scene[index_collision].mat.emissivity > 0.0){
@@ -301,7 +286,6 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
 
             acquired_color += diffuse_direct_col * _scene[intersection_id].mat.color * (1.0 -_scene[intersection_id].mat.spec) ;
 
-            //reflect
             float dice = random();
             _ray.m_or = intersection_point + bias * surf_norm;
             _ray.m_dir = diff_cos_weighted_direction( _scene[intersection_id].mat.spec, reflect(_ray.m_dir, surf_norm));
@@ -321,24 +305,16 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
   void make_scene(){
     float default_ambient = 0.000;
     float freq = 2.0;
-    //always add glowing object to lights
-    //material: color amb spec em
-    //white light
-    Material white = Material(vec3(1.0, 1.0, 1.0), default_ambient, 0.0,1.0);
-    //matte white
-    Material matte_white = Material(vec3(1.0), default_ambient, 0.0, default_ambient);
-    //glowing orange
-    Material orange = Material(vec3(1.0, 0.4, 0.0), default_ambient, 0.0, default_ambient);
-    //teal glowing
     float glow = 0.5*cos(freq*iTime)+0.5;
     Material teal = Material(vec3(0.0, 1.0, 1.0), default_ambient, 0.5, default_ambient);
     Material gold = Material(vec3(0.83, 0.68, 0.216), default_ambient, 1.0, default_ambient);
+    Material white = Material(vec3(1.0, 1.0, 1.0), default_ambient, 0.0,1.0);
+    Material matte_white = Material(vec3(1.0), default_ambient, 0.0, default_ambient);
+    Material orange = Material(vec3(1.0, 0.4, 0.0), default_ambient, 0.0, default_ambient);
     Material orange_glow = orange;
     orange_glow.emissivity = 0.25;
 
     Material green = Material(vec3(0.0, 1.0, 0.0), default_ambient, 0.65, default_ambient);
-    //object
-    //type pos radius normal material
     float lulz = 2.0;
 
     float x_pos = -5.0;
@@ -348,9 +324,9 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
 
     scene[0] = Object(1, vec3(x_pos, y_pos, 1.0), 1.0, vec3(0.0, 0.0, 0.0), orange_glow);
     scene[1] = Object(1, vec3(0.0, 1.0+sin(iTime*freq), 0.0), 1.0, vec3(0.0, 0.0, 0.0), matte_white);
-    scene[2] = Object(2, vec3(0.0, -0.5, 0.0), infinity, vec3(0.0, 1.0, 0.0), matte_white);
+    scene[2] = Object(2, vec3(0.0, -2.0, 0.0), infinity, vec3(0.0, 1.0, 0.0), matte_white);
     scene[3] = Object(1, vec3(-3.0, 0.5, 0.0), 1.0, vec3(0.0, 0.0, 0.0), green);
-    scene[4] = Object(1, vec3(5.0, 1.0, 0.0), 2.0, vec3(0.0, 0.0, 0.0), gold);
+    scene[4] = Object(1, vec3(5.0, 1.0, 0.0), 0.5+0.2*sin(iTime*freq), vec3(0.0, 0.0, 0.0), gold);
     scene[5] = Object(1, vec3(5.0*sin(iTime*freq), 2.0+cos(iTime*freq), -5.0), 1.0, vec3(0.0, 0.0, 0.0), white);
 
 
@@ -362,14 +338,11 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
 
   void mainImage( out vec4 fragColor, in vec2 fragCoord )
   {
-    // Normalized pixel coordinates (from 0 to 1)
     uv = fragCoord/iResolution.xy;
 
     view_dir = normalize(vw_dir);
     view_pos = vw_pos;
-  // process_input();
     make_scene();
-    // Normalized pixel coordinates (from 0 to 1)UV = fragCoord;
     seed=iTime;
     uv = fragCoord;
 
@@ -390,7 +363,6 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
         }
     }
     out_col /= float(samples);
-    // blend with previous
     vec2 UV = fragCoord.xy / iResolution.xy;
     vec4 prev_col = texture2D(iChannel0, UV);
     float weight_prev = 1.0;
@@ -472,8 +444,8 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
 
     document.addEventListener('mousemove', e => {
       if (!pointerLocked) return;
-      const x = -e.movementY / 500; //  +ve, up  / -ve, down  //
-      const y = -e.movementX / 500; // +ve, left / -ve, right //
+      const x = -e.movementY / 500;
+      const y = -e.movementX / 500;
       theta -= y;
       phi -= x;
       viewdir = new THREE.Vector3(
@@ -503,11 +475,11 @@ import { ShaderPass } from "./js/three/ShaderPass.js";
     const data = new Uint8Array(dataSize);
 
     for (let i = 0;i < dataSize;i ++) {
-          data[i] = Math.round(Math.random() * 255); // pass anything from 0 to 255
+          data[i] = Math.round(Math.random() * 255);
     }
     const updateTexture = () => {
       for (let i = 0;i < dataSize;i ++) {
-        data[i] = Math.round(Math.random() * 255); // pass anything from 0 to 255
+        data[i] = Math.round(Math.random() * 255);
       }
     };
 
